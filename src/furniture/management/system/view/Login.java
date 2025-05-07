@@ -22,7 +22,7 @@ public class Login extends JFrame {
         userCredentials.put("sandaru", "123");
         userCredentials.put("seraan", "123");
 
-        JLabel logo = new JLabel("Arpico Furniture");
+        JLabel logo = new JLabel("Furniture Matrix");
         logo.setForeground(new Color(0, 0, 0));
         logo.setFont(new Font("Papyrus", Font.BOLD, 24));
         logo.setBounds(30, 15, 350, 38);
