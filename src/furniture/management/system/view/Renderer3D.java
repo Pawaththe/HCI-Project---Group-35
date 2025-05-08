@@ -421,24 +421,31 @@ public class Renderer3D implements GLEventListener {
                 break;
 
             case L_SHAPE:
+                // 1. Left vertical leg
                 drawQuad(gl,
                         -roomWidth / 2, 0f, roomDepth / 2,
                         -roomWidth / 4, 0f, roomDepth / 2,
                         -roomWidth / 4, 0f, -roomDepth / 2,
                         -roomWidth / 2, 0f, -roomDepth / 2
                 );
+
+                // 2. Top horizontal block
                 drawQuad(gl,
                         -roomWidth / 4, 0f, roomDepth / 2,
                         roomWidth / 2, 0f, roomDepth / 2,
                         roomWidth / 2, 0f, roomDepth / 4,
                         -roomWidth / 4, 0f, roomDepth / 4
                 );
+
+                // 3. Bottom-right block
                 drawQuad(gl,
                         0f, 0f, roomDepth / 4,
                         roomWidth / 2, 0f, roomDepth / 4,
                         roomWidth / 2, 0f, -roomDepth / 2,
                         0f, 0f, -roomDepth / 2
                 );
+
+                //4. MIDDLE vertical strip (the missing chunk!)
                 drawQuad(gl,
                         -roomWidth / 4, 0f, roomDepth / 4,
                         0f, 0f, roomDepth / 4,
@@ -447,33 +454,76 @@ public class Renderer3D implements GLEventListener {
                 );
                 break;
 
+
             case U_SHAPE:
                 float w = roomWidth;
                 float d = roomDepth;
+                float wallHeight = 5f;
+
                 float x1 = -w / 2f;
                 float x2 = -w / 4f;
                 float x3 = w / 4f;
                 float x4 = w / 2f;
+
                 float z1 = -d / 2f;
                 float z2 = -d / 4f;
                 float z3 = d / 2f;
+
+                // Left arm
                 drawQuad(gl, x1, 0f, z3, x2, 0f, z3, x2, 0f, z1, x1, 0f, z1);
+
+                // Right arm
                 drawQuad(gl, x3, 0f, z3, x4, 0f, z3, x4, 0f, z1, x3, 0f, z1);
+
+                // Bottom bridge
                 drawQuad(gl, x2, 0f, z2, x3, 0f, z2, x3, 0f, z1, x2, 0f, z1);
+
+                // Draw left inner vertical wall
+                gl.glPushMatrix();
+                gl.glDisable(GL.GL_TEXTURE_2D);
+                gl.glEnable(GL2.GL_LIGHTING);
+                gl.glColor4f(
+                        roomConfigPanel.getWallColor().getRed() / 255f,
+                        roomConfigPanel.getWallColor().getGreen() / 255f,
+                        roomConfigPanel.getWallColor().getBlue() / 255f,
+                        0.8f
+                );
+                gl.glBegin(GL2.GL_QUADS);
+                gl.glVertex3f(x2, 0f, z3);
+                gl.glVertex3f(x2, 0f, z2);
+                gl.glVertex3f(x2, wallHeight, z2);
+                gl.glVertex3f(x2, wallHeight, z3);
+                gl.glEnd();
+
+                // Draw right inner vertical wall
+                gl.glBegin(GL2.GL_QUADS);
+                gl.glVertex3f(x3, 0f, z3);
+                gl.glVertex3f(x3, 0f, z2);
+                gl.glVertex3f(x3, wallHeight, z2);
+                gl.glVertex3f(x3, wallHeight, z3);
+                gl.glEnd();
+                gl.glPopMatrix();
                 break;
+
 
             case T_SHAPE:
                 float tw = roomWidth;
                 float td = roomDepth;
+
                 float tx1 = -tw / 2f;
                 float tx2 = -tw / 4f;
                 float tx3 = tw / 4f;
                 float tx4 = tw / 2f;
+
                 float tz1 = -td / 2f;
                 float tz2 = -td / 4f;
                 float tz3 = td / 4f;
                 float tz4 = td / 2f;
+
+                // Bottom horizontal bar of the T
                 drawQuad(gl, tx1, 0f, tz1, tx4, 0f, tz1, tx4, 0f, tz2, tx1, 0f, tz2);
+
+                // Vertical bar of the T (centered)
                 drawQuad(gl, tx2, 0f, tz2, tx3, 0f, tz2, tx3, 0f, tz4, tx2, 0f, tz4);
                 break;
 
@@ -603,151 +653,60 @@ public class Renderer3D implements GLEventListener {
         gl.glBegin(GL2.GL_QUADS);
         gl.glTexCoord2f(0f, 0f);
         gl.glVertex3f(-roomWidth / 2, 0f, roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ / 2, 0f);
-        gl.glVertex3f(-roomWidth / 2, 0f, -roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ / 2, texScaleY);
-        gl.glVertex3f(-roomWidth / 2, wallHeight, -roomDepth / 2);
+        gl.glTexCoord2f(texScaleX / 2, 0f);
+        gl.glVertex3f(-roomWidth / 4, 0f, roomDepth / 2);
+        gl.glTexCoord2f(texScaleX / 2, texScaleY);
+        gl.glVertex3f(-roomWidth / 4, wallHeight, roomDepth / 2);
         gl.glTexCoord2f(0f, texScaleY);
         gl.glVertex3f(-roomWidth / 2, wallHeight, roomDepth / 2);
         gl.glEnd();
 
         gl.glBegin(GL2.GL_QUADS);
         gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(-roomWidth / 4, 0f, roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ / 4, 0f);
-        gl.glVertex3f(-roomWidth / 4, 0f, roomDepth / 4);
-        gl.glTexCoord2f(texScaleZ / 4, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, roomDepth / 4);
+        gl.glVertex3f(-roomWidth / 2, 0f, -roomDepth / 2);
+        gl.glTexCoord2f(texScaleZ, 0f);
+        gl.glVertex3f(-roomWidth / 2, 0f, roomDepth / 2);
+        gl.glTexCoord2f(texScaleZ, texScaleY);
+        gl.glVertex3f(-roomWidth / 2, wallHeight, roomDepth / 2);
         gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, roomDepth / 2);
+        gl.glVertex3f(-roomWidth / 2, wallHeight, -roomDepth / 2);
         gl.glEnd();
 
         gl.glBegin(GL2.GL_QUADS);
         gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(-roomWidth / 4, 0f, roomDepth / 2);
-        gl.glTexCoord2f(texScaleX / 4, 0f);
-        gl.glVertex3f(roomWidth / 2, 0f, roomDepth / 2);
-        gl.glTexCoord2f(texScaleX / 4, texScaleY);
-        gl.glVertex3f(roomWidth / 2, wallHeight, roomDepth / 2);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, roomDepth / 2);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(roomWidth / 2, 0f, roomDepth / 4);
-        gl.glTexCoord2f(texScaleZ / 4, 0f);
         gl.glVertex3f(roomWidth / 2, 0f, -roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ / 4, texScaleY);
-        gl.glVertex3f(roomWidth / 2, wallHeight, -roomDepth / 2);
-        gl.glTexCoord2f(0f, texScaleY);
+        gl.glTexCoord2f(texScaleZ / 2, 0f);
+        gl.glVertex3f(roomWidth / 2, 0f, roomDepth / 4);
+        gl.glTexCoord2f(texScaleZ / 2, texScaleY);
         gl.glVertex3f(roomWidth / 2, wallHeight, roomDepth / 4);
+        gl.glTexCoord2f(0f, texScaleY);
+        gl.glVertex3f(roomWidth / 2, wallHeight, -roomDepth / 2);
         gl.glEnd();
 
         gl.glBegin(GL2.GL_QUADS);
         gl.glTexCoord2f(0f, 0f);
         gl.glVertex3f(-roomWidth / 4, 0f, roomDepth / 4);
-        gl.glTexCoord2f(texScaleX / 4, 0f);
-        gl.glVertex3f(0f, 0f, roomDepth / 4);
-        gl.glTexCoord2f(texScaleX / 4, texScaleY);
-        gl.glVertex3f(0f, wallHeight, roomDepth / 4);
+        gl.glTexCoord2f(texScaleX / 2, 0f);
+        gl.glVertex3f(roomWidth / 2, 0f, roomDepth / 4);
+        gl.glTexCoord2f(texScaleX / 2, texScaleY);
+        gl.glVertex3f(roomWidth / 2, wallHeight, roomDepth / 4);
         gl.glTexCoord2f(0f, texScaleY);
         gl.glVertex3f(-roomWidth / 4, wallHeight, roomDepth / 4);
         gl.glEnd();
 
         gl.glBegin(GL2.GL_QUADS);
         gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(0f, 0f, roomDepth / 4);
-        gl.glTexCoord2f(texScaleX / 4, 0f);
-        gl.glVertex3f(roomWidth / 2, 0f, roomDepth / 4);
-        gl.glTexCoord2f(texScaleX / 4, texScaleY);
-        gl.glVertex3f(roomWidth / 2, wallHeight, roomDepth / 4);
+        gl.glVertex3f(-roomWidth / 4, 0f, roomDepth / 2);
+        gl.glTexCoord2f(texScaleZ / 4, 0f);
+        gl.glVertex3f(-roomWidth / 4, 0f, roomDepth / 4);
+        gl.glTexCoord2f(texScaleZ / 4, texScaleY);
+        gl.glVertex3f(-roomWidth / 4, wallHeight, roomDepth / 4);
         gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(0f, wallHeight, roomDepth / 4);
+        gl.glVertex3f(-roomWidth / 4, wallHeight, roomDepth / 2);
         gl.glEnd();
     }
 
     private void drawUShapeWalls(GL2 gl, float texScaleX, float texScaleY, float texScaleZ, float roomWidth, float roomDepth) {
-        float wallHeight = 5f;
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(-roomWidth / 2, 0f, roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ, 0f);
-        gl.glVertex3f(-roomWidth / 2, 0f, -roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ, texScaleY);
-        gl.glVertex3f(-roomWidth / 2, wallHeight, -roomDepth / 2);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(-roomWidth / 2, wallHeight, roomDepth / 2);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(-roomWidth / 4, 0f, roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ / 2, 0f);
-        gl.glVertex3f(-roomWidth / 4, 0f, -roomDepth / 4);
-        gl.glTexCoord2f(texScaleZ / 2, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, -roomDepth / 4);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, roomDepth / 2);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(roomWidth / 2, 0f, roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ, 0f);
-        gl.glVertex3f(roomWidth / 2, 0f, -roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ, texScaleY);
-        gl.glVertex3f(roomWidth / 2, wallHeight, -roomDepth / 2);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(roomWidth / 2, wallHeight, roomDepth / 2);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(roomWidth / 4, 0f, roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ / 2, 0f);
-        gl.glVertex3f(roomWidth / 4, 0f, -roomDepth / 4);
-        gl.glTexCoord2f(texScaleZ / 2, texScaleY);
-        gl.glVertex3f(roomWidth / 4, wallHeight, -roomDepth / 4);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(roomWidth / 4, wallHeight, roomDepth / 2);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(-roomWidth / 4, 0f, -roomDepth / 2);
-        gl.glTexCoord2f(texScaleX / 2, 0f);
-        gl.glVertex3f(roomWidth / 4, 0f, -roomDepth / 2);
-        gl.glTexCoord2f(texScaleX / 2, texScaleY);
-        gl.glVertex3f(roomWidth / 4, wallHeight, -roomDepth / 2);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, -roomDepth / 2);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(-roomWidth / 2, 0f, -roomDepth / 2);
-        gl.glTexCoord2f(texScaleX / 4, 0f);
-        gl.glVertex3f(-roomWidth / 4, 0f, -roomDepth / 2);
-        gl.glTexCoord2f(texScaleX / 4, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, -roomDepth / 2);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(-roomWidth / 2, wallHeight, -roomDepth / 2);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(roomWidth / 4, 0f, -roomDepth / 2);
-        gl.glTexCoord2f(texScaleX / 4, 0f);
-        gl.glVertex3f(roomWidth / 2, 0f, -roomDepth / 2);
-        gl.glTexCoord2f(texScaleX / 4, texScaleY);
-        gl.glVertex3f(roomWidth / 2, wallHeight, -roomDepth / 2);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(roomWidth / 4, wallHeight, -roomDepth / 2);
-        gl.glEnd();
-    }
-
-    private void drawTShapeWalls(GL2 gl, float texScaleX, float texScaleY, float texScaleZ, float roomWidth, float roomDepth) {
         float wallHeight = 5f;
         gl.glBegin(GL2.GL_QUADS);
         gl.glTexCoord2f(0f, 0f);
@@ -762,59 +721,83 @@ public class Renderer3D implements GLEventListener {
 
         gl.glBegin(GL2.GL_QUADS);
         gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(-roomWidth / 2, 0f, -roomDepth / 4);
-        gl.glTexCoord2f(texScaleX / 4, 0f);
+        gl.glVertex3f(-roomWidth / 2, 0f, roomDepth / 2);
+        gl.glTexCoord2f(texScaleX, 0f);
+        gl.glVertex3f(roomWidth / 2, 0f, roomDepth / 2);
+        gl.glTexCoord2f(texScaleX, texScaleY);
+        gl.glVertex3f(roomWidth / 2, wallHeight, roomDepth / 2);
+        gl.glTexCoord2f(0f, texScaleY);
+        gl.glVertex3f(-roomWidth / 2, wallHeight, roomDepth / 2);
+        gl.glEnd();
+
+        gl.glBegin(GL2.GL_QUADS);
+        gl.glTexCoord2f(0f, 0f);
+        gl.glVertex3f(-roomWidth / 2, 0f, -roomDepth / 2);
+        gl.glTexCoord2f(texScaleZ, 0f);
+        gl.glVertex3f(-roomWidth / 2, 0f, roomDepth / 2);
+        gl.glTexCoord2f(texScaleZ, texScaleY);
+        gl.glVertex3f(-roomWidth / 2, wallHeight, roomDepth / 2);
+        gl.glTexCoord2f(0f, texScaleY);
+        gl.glVertex3f(-roomWidth / 2, wallHeight, -roomDepth / 2);
+        gl.glEnd();
+
+        gl.glBegin(GL2.GL_QUADS);
+        gl.glTexCoord2f(0f, 0f);
+        gl.glVertex3f(roomWidth / 2, 0f, -roomDepth / 2);
+        gl.glTexCoord2f(texScaleZ, 0f);
+        gl.glVertex3f(roomWidth / 2, 0f, roomDepth / 2);
+        gl.glTexCoord2f(texScaleZ, texScaleY);
+        gl.glVertex3f(roomWidth / 2, wallHeight, roomDepth / 2);
+        gl.glTexCoord2f(0f, texScaleY);
+        gl.glVertex3f(roomWidth / 2, wallHeight, -roomDepth / 2);
+        gl.glEnd();
+
+        gl.glBegin(GL2.GL_QUADS);
+        gl.glTexCoord2f(0f, 0f);
         gl.glVertex3f(-roomWidth / 4, 0f, -roomDepth / 4);
-        gl.glTexCoord2f(texScaleX / 4, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, -roomDepth / 4);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(-roomWidth / 2, wallHeight, -roomDepth / 4);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(roomWidth / 4, 0f, -roomDepth / 4);
-        gl.glTexCoord2f(texScaleX / 4, 0f);
-        gl.glVertex3f(roomWidth / 2, 0f, -roomDepth / 4);
-        gl.glTexCoord2f(texScaleX / 4, texScaleY);
-        gl.glVertex3f(roomWidth / 2, wallHeight, -roomDepth / 4);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(roomWidth / 4, wallHeight, -roomDepth / 4);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(-roomWidth / 4, 0f, roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ / 2, 0f);
-        gl.glVertex3f(-roomWidth / 4, 0f, -roomDepth / 4);
-        gl.glTexCoord2f(texScaleZ / 2, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, -roomDepth / 4);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, roomDepth / 2);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(roomWidth / 4, 0f, roomDepth / 2);
-        gl.glTexCoord2f(texScaleZ / 2, 0f);
-        gl.glVertex3f(roomWidth / 4, 0f, -roomDepth / 4);
-        gl.glTexCoord2f(texScaleZ / 2, texScaleY);
-        gl.glVertex3f(roomWidth / 4, wallHeight, -roomDepth / 4);
-        gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(roomWidth / 4, wallHeight, roomDepth / 2);
-        gl.glEnd();
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0f, 0f);
-        gl.glVertex3f(-roomWidth / 4, 0f, roomDepth / 2);
         gl.glTexCoord2f(texScaleX / 2, 0f);
-        gl.glVertex3f(roomWidth / 4, 0f, roomDepth / 2);
+        gl.glVertex3f(roomWidth / 4, 0f, -roomDepth / 4);
         gl.glTexCoord2f(texScaleX / 2, texScaleY);
-        gl.glVertex3f(roomWidth / 4, wallHeight, roomDepth / 2);
+        gl.glVertex3f(roomWidth / 4, wallHeight, -roomDepth / 4);
         gl.glTexCoord2f(0f, texScaleY);
-        gl.glVertex3f(-roomWidth / 4, wallHeight, roomDepth / 2);
+        gl.glVertex3f(-roomWidth / 4, wallHeight, -roomDepth / 4);
         gl.glEnd();
     }
+
+    private void drawTShapeWalls(GL2 gl, float texScaleX, float texScaleY, float texScaleZ, float roomWidth, float roomDepth) {
+        float tw = roomWidth;
+        float td = roomDepth;
+        float tWallHeight = 5f;
+
+        float tx1 = -tw / 2f;
+        float tx2 = -tw / 4f;
+        float tx3 = tw / 4f;
+        float tx4 = tw / 2f;
+
+        float tz1 = -td / 2f;
+        float tz2 = -td / 4f;
+        float tz3 = td / 4f;
+        float tz4 = td / 2f;
+
+        // Top back wall of the vertical T
+        drawQuad(gl, tx2, 0f, tz4, tx3, 0f, tz4, tx3, tWallHeight, tz4, tx2, tWallHeight, tz4);
+
+        // Left side wall
+        drawQuad(gl, tx1, 0f, tz2, tx1, 0f, tz1, tx1, tWallHeight, tz1, tx1, tWallHeight, tz2);
+
+        // Right side wall
+        drawQuad(gl, tx4, 0f, tz2, tx4, 0f, tz1, tx4, tWallHeight, tz1, tx4, tWallHeight, tz2);
+
+        // Bottom wall
+        drawQuad(gl, tx1, 0f, tz1, tx4, 0f, tz1, tx4, tWallHeight, tz1, tx1, tWallHeight, tz1);
+
+        // Inner left vertical bar wall
+        drawQuad(gl, tx2, 0f, tz4, tx2, 0f, tz2, tx2, tWallHeight, tz2, tx2, tWallHeight, tz4);
+
+        // Inner right vertical bar wall
+        drawQuad(gl, tx3, 0f, tz4, tx3, 0f, tz2, tx3, tWallHeight, tz2, tx3, tWallHeight, tz4);
+    }
+
 
     private void drawCircularWalls(GL2 gl, float texScaleY, float roomWidth, float roomDepth) {
         float wallHeight = 5f;
