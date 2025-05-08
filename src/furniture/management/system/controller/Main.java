@@ -1,21 +1,19 @@
 package furniture.management.system.controller;
 
-import java.awt.Component;
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+import furniture.management.system.view.ShowRoomPanel;
+
+import javax.swing.*;
 
 public class Main {
-    public Main() {
-    }
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Furniture Matrix");
-            frame.setDefaultCloseOperation(3);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
             ShowRoomPanel showroom = new ShowRoomPanel();
             frame.getContentPane().add(showroom);
-            frame.pack();
-            frame.setLocationRelativeTo((Component)null);
+
+            frame.setExtendedState(JFrame.MAXIMIZED_BOTH); // full screen with title bar
             frame.setVisible(true);
         });
     }
