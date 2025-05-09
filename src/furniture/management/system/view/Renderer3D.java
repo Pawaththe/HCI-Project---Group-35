@@ -272,27 +272,20 @@ public class Renderer3D implements GLEventListener {
                 if (f3 != null) {
                     if (ri.useWoodMaterial) {
                         GLUtil.setCurrentMaterial(GLUtil.Material.WOOD);
+                        GLUtil.customColor = null; // Use default wood material
                     } else {
-                        // Apply custom color for all parts of the furniture
-                        float[] colorArray = {
-                                ri.color.getRed() / 255f,
-                                ri.color.getGreen() / 255f,
-                                ri.color.getBlue() / 255f,
-                                1.0f
-                        };
-                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_AMBIENT_AND_DIFFUSE, colorArray, 0);
-                        float[] specular = {0.3f, 0.3f, 0.3f, 1.0f};
-                        gl.glMaterialfv(GL2.GL_FRONT_AND_BACK, GL2.GL_SPECULAR, specular, 0);
-                        gl.glMaterialf(GL2.GL_FRONT_AND_BACK, GL2.GL_SHININESS, 10.0f);
+                        GLUtil.customColor = ri.color; // Set custom color
                     }
                     f3.display(drawable);
                 } else {
                     // Fallback rendering
                     if (ri.useWoodMaterial) {
                         GLUtil.setCurrentMaterial(GLUtil.Material.WOOD);
+                        GLUtil.customColor = null;
                         GLUtil.drawCube(gl, ri.width, ri.height, ri.width);
                     } else {
-                        GLUtil.drawCube(gl, ri.width, ri.height, ri.width, ri.color);
+                        GLUtil.customColor = ri.color;
+                        GLUtil.drawCube(gl, ri.width, ri.height, ri.width);
                     }
                 }
 
@@ -381,8 +374,8 @@ public class Renderer3D implements GLEventListener {
             } finally {
                 gl.glPopMatrix();
             }
-
         }
+        GLUtil.customColor = null; // Reset after rendering all items
     }
 
     public void updateRoomDimensions(float dx, float dy) {
@@ -454,7 +447,6 @@ public class Renderer3D implements GLEventListener {
                 );
                 break;
 
-
             case U_SHAPE:
                 float w = roomWidth;
                 float d = roomDepth;
@@ -505,7 +497,6 @@ public class Renderer3D implements GLEventListener {
                 gl.glPopMatrix();
                 break;
 
-
             case T_SHAPE:
                 float tw = roomWidth;
                 float td = roomDepth;
@@ -526,6 +517,7 @@ public class Renderer3D implements GLEventListener {
                 // Vertical bar of the T (centered)
                 drawQuad(gl, tx2, 0f, tz2, tx3, 0f, tz2, tx3, 0f, tz4, tx2, 0f, tz4);
                 break;
+
 
             case CIRCULAR:
                 int segments = 128;
@@ -797,7 +789,6 @@ public class Renderer3D implements GLEventListener {
         // Inner right vertical bar wall
         drawQuad(gl, tx3, 0f, tz4, tx3, 0f, tz2, tx3, tWallHeight, tz2, tx3, tWallHeight, tz4);
     }
-
 
     private void drawCircularWalls(GL2 gl, float texScaleY, float roomWidth, float roomDepth) {
         float wallHeight = 5f;
