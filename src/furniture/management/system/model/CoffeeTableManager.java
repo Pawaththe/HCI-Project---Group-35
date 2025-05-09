@@ -10,6 +10,7 @@ import furniture.management.system.view.ControlsPanel;
 import furniture.management.system.view.RoundedButton;
 import furniture.management.system.view.SavePanel;
 import furniture.management.system.view.StartupUtils;
+import furniture.management.system.view.RenderItem;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,111 +32,144 @@ public class CoffeeTableManager extends Furniture {
     @Override
     public void display(GLAutoDrawable drawable) {
         final GL2 gl = drawable.getGL().getGL2();
-        // Remove super.display(drawable) to avoid clearing buffers and resetting the matrix
-        // Remove lightingManager.applyLighting(gl) to avoid conflicts with Renderer3D
-        drawCoffeeTable(gl);
+        // The Renderer3D will handle transformations and lighting, so we only draw the coffee table
+        drawCoffeeTable(gl, null); // Default rendering without specific RenderItem
     }
 
-    private void drawCoffeeTable(GL2 gl) {
-        drawLeftLeg(gl);
-        drawRightLeg(gl);
-        drawTableTopOne(gl);
-        drawFrontRight(gl);
-        drawFrontLeft(gl);
-        drawTableTopTwo(gl);
-        drawTableTopThree(gl);
-        drawTableTopFour(gl);
-        // Remove floor and background color calls since Renderer3D handles these
-        // colorManager.applyFloorColor(gl);
-        // GLUtil.drawFloor(gl);
-        // colorManager.applyBackgroundColor(gl);
+    // Overloaded method to support RenderItem for color and material
+    public void display(GLAutoDrawable drawable, RenderItem item) {
+        final GL2 gl = drawable.getGL().getGL2();
+        drawCoffeeTable(gl, item);
     }
 
-    private void drawLeftLeg(GL2 gl) {
+    private void drawCoffeeTable(GL2 gl, RenderItem item) {
+        drawLeftLeg(gl, item);
+        drawRightLeg(gl, item);
+        drawTableTopOne(gl, item);
+        drawFrontRight(gl, item);
+        drawFrontLeft(gl, item);
+        drawTableTopTwo(gl, item);
+        drawTableTopThree(gl, item);
+        drawTableTopFour(gl, item);
+    }
+
+    private void drawLeftLeg(GL2 gl, RenderItem item) {
         float tableWidth = 0.2f;
         float tableHeight = type.equals("CoffeeTable2") ? 5.0f : 4.5f; // Taller legs for CoffeeTable2
         float tableDepth = 0.15f;
 
         gl.glPushMatrix();
         gl.glTranslatef(-2.0f, 0.0f, 1.0f);
-        GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        if (item != null) {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth, item);
+        } else {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        }
         gl.glPopMatrix();
     }
 
-    private void drawRightLeg(GL2 gl) {
+    private void drawRightLeg(GL2 gl, RenderItem item) {
         float tableWidth = 0.2f;
         float tableHeight = type.equals("CoffeeTable2") ? 5.0f : 4.5f;
         float tableDepth = 0.15f;
 
         gl.glPushMatrix();
         gl.glTranslatef(1.2f, 0.0f, 1.0f);
-        GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        if (item != null) {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth, item);
+        } else {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        }
         gl.glPopMatrix();
     }
 
-    private void drawFrontLeft(GL2 gl) {
+    private void drawFrontLeft(GL2 gl, RenderItem item) {
         float tableWidth = 0.2f;
         float tableHeight = type.equals("CoffeeTable2") ? 5.0f : 4.5f;
         float tableDepth = 0.15f;
 
         gl.glPushMatrix();
         gl.glTranslatef(-2.0f, 0.0f, 3.0f);
-        GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        if (item != null) {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth, item);
+        } else {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        }
         gl.glPopMatrix();
     }
 
-    private void drawFrontRight(GL2 gl) {
+    private void drawFrontRight(GL2 gl, RenderItem item) {
         float tableWidth = 0.2f;
         float tableHeight = type.equals("CoffeeTable2") ? 5.0f : 4.5f;
         float tableDepth = 0.15f;
 
         gl.glPushMatrix();
         gl.glTranslatef(1.2f, 0.0f, 3.0f);
-        GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        if (item != null) {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth, item);
+        } else {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        }
         gl.glPopMatrix();
     }
 
-    private void drawTableTopOne(GL2 gl) {
+    private void drawTableTopOne(GL2 gl, RenderItem item) {
         float tableWidth = type.equals("CoffeeTable3") ? 1.2f : 1f; // Wider top for CoffeeTable3
         float tableHeight = 0.8f;
         float tableDepth = type.equals("CoffeeTable1") ? 3.5f : 3f; // Longer depth for CoffeeTable1
 
         gl.glPushMatrix();
         gl.glTranslatef(-2f, 2f, 2.0f);
-        GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        if (item != null) {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth, item);
+        } else {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        }
         gl.glPopMatrix();
     }
 
-    private void drawTableTopTwo(GL2 gl) {
+    private void drawTableTopTwo(GL2 gl, RenderItem item) {
         float tableWidth = type.equals("CoffeeTable3") ? 1.2f : 1f;
         float tableHeight = 0.8f;
         float tableDepth = type.equals("CoffeeTable1") ? 3.5f : 3f;
 
         gl.glPushMatrix();
         gl.glTranslatef(-0.95f, 2f, 2f);
-        GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        if (item != null) {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth, item);
+        } else {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        }
         gl.glPopMatrix();
     }
 
-    private void drawTableTopThree(GL2 gl) {
+    private void drawTableTopThree(GL2 gl, RenderItem item) {
         float tableWidth = type.equals("CoffeeTable3") ? 1.2f : 1f;
         float tableHeight = 0.8f;
         float tableDepth = type.equals("CoffeeTable1") ? 3.5f : 3f;
 
         gl.glPushMatrix();
         gl.glTranslatef(0.1f, 2.0f, 2f);
-        GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        if (item != null) {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth, item);
+        } else {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        }
         gl.glPopMatrix();
     }
 
-    private void drawTableTopFour(GL2 gl) {
+    private void drawTableTopFour(GL2 gl, RenderItem item) {
         float tableWidth = type.equals("CoffeeTable3") ? 1.2f : 1f;
         float tableHeight = 0.8f;
         float tableDepth = type.equals("CoffeeTable1") ? 3.5f : 3f;
 
         gl.glPushMatrix();
         gl.glTranslatef(1.15f, 2.0f, 2f);
-        GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        if (item != null) {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth, item);
+        } else {
+            GLUtil.drawCube(gl, tableWidth, tableHeight, tableDepth);
+        }
         gl.glPopMatrix();
     }
 
