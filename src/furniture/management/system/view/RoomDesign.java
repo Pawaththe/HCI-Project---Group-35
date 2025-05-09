@@ -21,4 +21,28 @@ public class RoomDesign implements Serializable {
         this.wallColor = wallColor;
         this.floorColor = floorColor;
     }
+
+    public List<RenderItem> getItems() {
+        return new ArrayList<>(items);
+    }
+
+    public RoomConfigPanel.RoomShape getShape() {
+        return shape;
+    }
+
+    public float getWidth() {
+        return width;
+    }
+
+    public float getDepth() {
+        return depth;
+    }
+
+    public Color getWallColor() {
+        return wallColor;
+    }
+
+    public Color getFloorColor() {
+        return floorColor;
+    }
 }
