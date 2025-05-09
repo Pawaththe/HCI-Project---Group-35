@@ -6,6 +6,8 @@ import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.awt.GLJPanel;
 import com.jogamp.opengl.util.gl2.GLUT;
+import furniture.management.system.model.DragHelper;
+
 
 import java.awt.event.MouseWheelEvent;
 import java.util.ArrayList;
@@ -108,7 +110,6 @@ public class Renderer2D implements GLEventListener {
             case RECTANGLE:
             case SQUARE:
                 gl.glBegin(GL2.GL_QUADS);
-                // NEW (Y/Z-axis flipped)
                 gl.glVertex2f(-w / 2, -d / 2);
                 gl.glVertex2f(w / 2, -d / 2);
                 gl.glVertex2f(w / 2, d / 2);
@@ -118,20 +119,16 @@ public class Renderer2D implements GLEventListener {
 
             case L_SHAPE:
                 gl.glBegin(GL2.GL_QUADS);
-                // Vertical part of L
                 gl.glVertex2f(-w / 2, -d / 2);
                 gl.glVertex2f(-w / 4, -d / 2);
                 gl.glVertex2f(-w / 4, d / 2);
                 gl.glVertex2f(-w / 2, d / 2);
-
-                // Horizontal part of L
                 gl.glVertex2f(-w / 4, d / 4);
                 gl.glVertex2f(w / 2, d / 4);
                 gl.glVertex2f(w / 2, d / 2);
                 gl.glVertex2f(-w / 4, d / 2);
                 gl.glEnd();
                 break;
-
 
             case U_SHAPE:
                 gl.glBegin(GL2.GL_QUADS);
@@ -139,37 +136,29 @@ public class Renderer2D implements GLEventListener {
                 gl.glVertex2f(-w / 4, -d / 2);
                 gl.glVertex2f(-w / 4, d / 2);
                 gl.glVertex2f(-w / 2, d / 2);
-
                 gl.glVertex2f(w / 4, -d / 2);
                 gl.glVertex2f(w / 2, -d / 2);
                 gl.glVertex2f(w / 2, d / 2);
                 gl.glVertex2f(w / 4, d / 2);
-
-                gl.glVertex2f(-w / 4, -d / 2);
-                gl.glVertex2f(w / 4, -d / 2);
-                gl.glVertex2f(w / 4, -d / 4);
-                gl.glVertex2f(-w / 4, -d / 4);
+                gl.glVertex2f(-w / 4, d / 2);
+                gl.glVertex2f(w / 4, d / 2);
+                gl.glVertex2f(w / 4, d / 4);
+                gl.glVertex2f(-w / 4, d / 4);
                 gl.glEnd();
                 break;
 
             case T_SHAPE:
                 gl.glBegin(GL2.GL_QUADS);
-
-                // Top horizontal bar of the T
                 gl.glVertex2f(-w / 2, d / 2);
                 gl.glVertex2f(w / 2, d / 2);
                 gl.glVertex2f(w / 2, d / 4);
                 gl.glVertex2f(-w / 2, d / 4);
-
-                // Bottom vertical stem of the T
                 gl.glVertex2f(-w / 4, d / 4);
                 gl.glVertex2f(w / 4, d / 4);
                 gl.glVertex2f(w / 4, -d / 2);
                 gl.glVertex2f(-w / 4, -d / 2);
-
                 gl.glEnd();
                 break;
-
 
             case CIRCULAR:
                 float r = Math.min(w, d) / 2f;
@@ -184,6 +173,7 @@ public class Renderer2D implements GLEventListener {
                 gl.glEnd();
                 break;
         }
+
         // Draw walls (as border lines) using wall color
         gl.glColor3f(
                 roomConfigPanel.getWallColor().getRed() / 255f,
@@ -196,7 +186,6 @@ public class Renderer2D implements GLEventListener {
         switch (shape) {
             case RECTANGLE:
             case SQUARE:
-                // NEW (Y/Z-axis flipped)
                 gl.glVertex2f(-w / 2, -d / 2);
                 gl.glVertex2f(w / 2, -d / 2);
                 gl.glVertex2f(w / 2, d / 2);
@@ -224,14 +213,14 @@ public class Renderer2D implements GLEventListener {
                 break;
 
             case T_SHAPE:
-                gl.glVertex2f(-w / 2, -d / 2);
-                gl.glVertex2f(w / 2, -d / 2);
-                gl.glVertex2f(w / 2, -d / 4);
-                gl.glVertex2f(w / 4, -d / 4);
-                gl.glVertex2f(w / 4, d / 2);
-                gl.glVertex2f(-w / 4, d / 2);
-                gl.glVertex2f(-w / 4, -d / 4);
-                gl.glVertex2f(-w / 2, -d / 4);
+                gl.glVertex2f(-w / 2, d / 2);      // Top-left of horizontal bar
+                gl.glVertex2f(w / 2, d / 2);       // Top-right of horizontal bar
+                gl.glVertex2f(w / 2, d / 4);       // Bottom-right of horizontal bar
+                gl.glVertex2f(w / 4, d / 4);       // Right edge of vertical stem (top)
+                gl.glVertex2f(w / 4, -d / 2);      // Right edge of vertical stem (bottom)
+                gl.glVertex2f(-w / 4, -d / 2);     // Left edge of vertical stem (bottom)
+                gl.glVertex2f(-w / 4, d / 4);      // Left edge of vertical stem (top)
+                gl.glVertex2f(-w / 2, d / 4);      // Bottom-left of horizontal bar
                 break;
 
             case CIRCULAR:
@@ -247,7 +236,6 @@ public class Renderer2D implements GLEventListener {
         }
         gl.glEnd();
         gl.glLineWidth(1f);
-
     }
 
     private void drawFurniture(GL2 gl) {
@@ -360,8 +348,9 @@ public class Renderer2D implements GLEventListener {
     public void mouseDragged(int x, int y) {
         if (isDragging) {
             float dx = DragHelper.computeDX(lastMouseX, x, zoom);
-            float dz = -DragHelper.computeDZ(lastMouseY, y, zoom); // Invert for 3D consistency
-// Z represents up in 2D logic
+            float dz = DragHelper.computeDZ(lastMouseY, y, zoom);
+            // Invert for 3D consistency
+
 
             panX += dx;
             panY += dz; // Now consistent with 3D
@@ -375,7 +364,8 @@ public class Renderer2D implements GLEventListener {
     public void moveSelectedItem(float dx, float dz) {
         if (selectedItem != null) {
             selectedItem.x += dx;
-            selectedItem.z -= dz;
+            selectedItem.z += dz;  //  Use same direction as 3D
+
 
             float halfW = roomConfigPanel.getRoomWidth() / 2f;
             float halfD = roomConfigPanel.getRoomDepth() / 2f;
