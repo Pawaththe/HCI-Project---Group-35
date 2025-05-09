@@ -1,30 +1,17 @@
 package furniture.management.system.view;
 
-import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLProfile;
+import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.awt.GLJPanel;
 import furniture.management.system.model.RotationManager;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelListener;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 import java.util.UUID;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import javax.swing.border.EmptyBorder;
 
 public class ShowRoomPanel extends JPanel {
     private final RoomConfigPanel roomConfigPanel = new RoomConfigPanel();
@@ -38,326 +25,474 @@ public class ShowRoomPanel extends JPanel {
     private final CardLayout cardLayout;
     private final JButton show2DButton = new JButton("Show 2D View");
     private final JButton show3DButton = new JButton("Show 3D View");
-    private float rotationX = 30.0F;
-    private float rotationY = 0.0F;
+    private float rotationX = 30f;
+    private float rotationY = 0f;
     private int lastX = -1;
     private int lastY = -1;
-    private final float rotationSpeed = 0.5F;
+    private final float rotationSpeed = 0.5f;
+
     private static final String VIEW_2D = "2D";
     private static final String VIEW_3D = "3D";
+
     private final Color backgroundColor = new Color(245, 245, 250);
-    private final Color buttonColor = new Color(38536);
-    private final Color activeButtonColor = new Color(31083);
+    private final Color buttonColor = new Color(0x009688);
+    private final Color activeButtonColor = new Color(0x00796B);
 
     public ShowRoomPanel() {
-        this.setLayout(new BorderLayout());
-        this.setBackground(this.backgroundColor);
-        this.renderer2D = new Renderer2D(this.roomConfigPanel);
-        this.renderer3D = new Renderer3D(this.roomConfigPanel, this.rotationManager);
-        this.furnitureConfigPanel = new FurnitureConfigPanel(this::addFurniture);
-        GLProfile profile = GLProfile.get("GL2");
+        setLayout(new BorderLayout());
+        setBackground(backgroundColor);
+
+        // Initialize renderers and panels
+        renderer2D = new Renderer2D(roomConfigPanel);
+        renderer3D = new Renderer3D(roomConfigPanel, rotationManager);
+        furnitureConfigPanel = new FurnitureConfigPanel(this::addFurniture, this::deleteFurniture);
+
+        GLProfile profile = GLProfile.get(GLProfile.GL2);
         GLCapabilities caps = new GLCapabilities(profile);
-        this.gl2DPanel = new GLJPanel(caps);
-        this.gl3DPanel = new GLJPanel(caps);
-        this.gl2DPanel.addGLEventListener(this.renderer2D);
-        this.gl3DPanel.addGLEventListener(this.renderer3D);
-        this.setupMouseListeners();
-        this.setupKeyListeners();
-        this.cardLayout = new CardLayout();
-        this.rightPanel = new JPanel(this.cardLayout);
-        this.rightPanel.add(this.gl2DPanel, "2D");
-        this.rightPanel.add(this.gl3DPanel, "3D");
-        this.cardLayout.show(this.rightPanel, "3D");
-        JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBackground(this.backgroundColor);
+        gl2DPanel = new GLJPanel(caps);
+        gl3DPanel = new GLJPanel(caps);
+
+        gl2DPanel.addGLEventListener(renderer2D);
+        gl3DPanel.addGLEventListener(renderer3D);
+
+        renderer3D.setFurnitureConfigPanel(furnitureConfigPanel);
+        renderer3D.setGL3DPanel(gl3DPanel);
+        renderer2D.setRotationAngleY(rotationY); // Ensure 2D renderer is initialized
+
+        // Setup UI components
+        cardLayout = new CardLayout();
+        rightPanel = new JPanel(cardLayout);
+        rightPanel.add(gl2DPanel, VIEW_2D);
+        rightPanel.add(gl3DPanel, VIEW_3D);
+        rightPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        cardLayout.show(rightPanel, VIEW_3D); // Default to 3D view
+
+        JPanel leftPanel = new JPanel(new BorderLayout(10, 10));
+        leftPanel.setBackground(backgroundColor);
         leftPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        leftPanel.add(this.roomConfigPanel, "North");
-        leftPanel.add(this.furnitureConfigPanel, "Center");
-        JPanel bottomPanel = this.createBottomPanel();
-        this.add(leftPanel, "West");
-        this.add(this.rightPanel, "Center");
-        this.add(bottomPanel, "South");
-        this.roomConfigPanel.addShapeChangeListener(() -> {
-            this.renderer2D.clearItems();
-            this.renderer3D.clearItems();
-            this.gl2DPanel.repaint();
-            this.gl3DPanel.repaint();
-        });
-        this.widthFieldListener();
-        this.heightFieldListener();
-        this.colorButtonListener();
+        leftPanel.add(roomConfigPanel, BorderLayout.NORTH);
+        leftPanel.add(furnitureConfigPanel, BorderLayout.CENTER);
+
+        JPanel bottomPanel = createBottomPanel();
+
+        add(leftPanel, BorderLayout.WEST);
+        add(rightPanel, BorderLayout.CENTER);
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        // Setup listeners
+        setupMouseListeners();
+        setupKeyListeners();
+        setupRoomConfigListeners();
+        setupFieldListeners();
+        setupColorListeners();
+    }
+
+    private void deleteFurniture() {
+        // Implementation to delete selected furniture
+        RenderItem selected3D = renderer3D.getSelectedItem();
+        if (selected3D != null) {
+            // Remove from 3D renderer
+            renderer3D.getItems().remove(selected3D);
+
+            // Find and remove corresponding 2D item
+            for (RenderItem item2D : renderer2D.getItems()) {
+                if (item2D.type.equals(selected3D.type) &&
+                        item2D.x == selected3D.x &&
+                        item2D.z == -selected3D.z) {
+                    renderer2D.getItems().remove(item2D);
+                    break;
+                }
+            }
+
+            // Clear selection and update views
+            furnitureConfigPanel.setSelectedItem(null, null);
+            gl2DPanel.repaint();
+            gl3DPanel.repaint();
+        }
     }
 
     private JPanel createBottomPanel() {
-        JPanel panel = new JPanel(new FlowLayout(1, 10, 10));
-        panel.setBackground(this.backgroundColor);
-        panel.setBorder(new EmptyBorder(10, 0, 10, 0));
-        JPanel bottomPanel = new JPanel(new FlowLayout());
-        bottomPanel.setBackground(this.backgroundColor);
-        JButton saveBtn = this.createStyledButton("Save Design");
-        JButton clearBtn = this.createStyledButton("Clear");
-        JButton houseViewBtn = this.createStyledButton("House View");
-        saveBtn.addActionListener((e) -> {
-            this.saveDesign();
-        });
-        clearBtn.addActionListener((e) -> {
-            this.clearDesign();
-        });
-        houseViewBtn.addActionListener((e) -> {
-            this.showHouseView();
-        });
-        this.show2DButton.setText("Show 2D View");
-        this.show3DButton.setText("Show 3D View");
-        this.styleViewButton(this.show2DButton);
-        this.styleViewButton(this.show3DButton);
-        this.show2DButton.addActionListener((e) -> {
-            this.show2DView();
-        });
-        this.show3DButton.addActionListener((e) -> {
-            this.show3DView();
-        });
-        this.show3DButton.setBackground(this.activeButtonColor);
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        bottomPanel.setBackground(backgroundColor);
+        bottomPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
+
+        JButton saveBtn = createStyledButton("Save Design");
+        JButton clearBtn = createStyledButton("Clear");
+        JButton houseViewBtn = createStyledButton("Saved Files");
+
+        saveBtn.addActionListener(e -> saveDesign());
+        clearBtn.addActionListener(e -> clearDesign());
+        houseViewBtn.addActionListener(e -> showHouseView());
+
+        styleViewButton(show2DButton);
+        styleViewButton(show3DButton);
+        show2DButton.addActionListener(e -> show2DView());
+        show3DButton.addActionListener(e -> show3DView());
+        show3DButton.setBackground(activeButtonColor); // Default to 3D view active
+
         bottomPanel.add(saveBtn);
         bottomPanel.add(clearBtn);
         bottomPanel.add(houseViewBtn);
-        bottomPanel.add(this.show2DButton);
-        bottomPanel.add(this.show3DButton);
+        bottomPanel.add(show2DButton);
+        bottomPanel.add(show3DButton);
+
         return bottomPanel;
     }
 
-    private void styleViewButton(final JButton button) {
-        button.setFocusPainted(false);
-        button.setBackground(this.buttonColor);
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("Segoe UI", 0, 14));
-        button.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
-        button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                if ((button != ShowRoomPanel.this.show2DButton || !ShowRoomPanel.this.cardLayoutIs2D()) && (button != ShowRoomPanel.this.show3DButton || ShowRoomPanel.this.cardLayoutIs2D())) {
-                    button.setBackground(ShowRoomPanel.this.activeButtonColor);
-                }
-
-            }
-
-            public void mouseExited(MouseEvent e) {
-                if (button == ShowRoomPanel.this.show2DButton && ShowRoomPanel.this.cardLayoutIs2D()) {
-                    button.setBackground(ShowRoomPanel.this.activeButtonColor);
-                } else if (button == ShowRoomPanel.this.show3DButton && !ShowRoomPanel.this.cardLayoutIs2D()) {
-                    button.setBackground(ShowRoomPanel.this.activeButtonColor);
-                } else {
-                    button.setBackground(ShowRoomPanel.this.buttonColor);
-                }
-
-            }
-        });
-    }
-
     private JButton createStyledButton(String text) {
-        final JButton button = new JButton(text);
+        JButton button = new JButton(text);
         button.setFocusPainted(false);
-        button.setBackground(this.buttonColor);
+        button.setBackground(buttonColor);
         button.setForeground(Color.WHITE);
-        button.setFont(new Font("Segoe UI", 0, 14));
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         button.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+
         button.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseEntered(MouseEvent e) {
-                button.setBackground(ShowRoomPanel.this.activeButtonColor);
+                button.setBackground(activeButtonColor);
             }
 
+            @Override
             public void mouseExited(MouseEvent e) {
-                if (button != ShowRoomPanel.this.show3DButton && button != ShowRoomPanel.this.show2DButton) {
-                    button.setBackground(ShowRoomPanel.this.buttonColor);
-                } else if (button == ShowRoomPanel.this.show2DButton && ShowRoomPanel.this.cardLayoutIs2D()) {
-                    button.setBackground(ShowRoomPanel.this.activeButtonColor);
-                } else if (button == ShowRoomPanel.this.show3DButton && !ShowRoomPanel.this.cardLayoutIs2D()) {
-                    button.setBackground(ShowRoomPanel.this.activeButtonColor);
+                if (button != show2DButton && button != show3DButton) {
+                    button.setBackground(buttonColor);
                 } else {
-                    button.setBackground(ShowRoomPanel.this.buttonColor);
+                    updateViewButtonColor(button);
                 }
-
             }
         });
         return button;
     }
 
-    private void show2DView() {
-        this.cardLayout.show(this.rightPanel, "2D");
-        this.show2DButton.setBackground(this.activeButtonColor);
-        this.show3DButton.setBackground(this.buttonColor);
-        this.gl2DPanel.repaint();
+    private void styleViewButton(JButton button) {
+        button.setFocusPainted(false);
+        button.setBackground(buttonColor);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        button.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (!(button == show2DButton && cardLayoutIs2D()) && !(button == show3DButton && !cardLayoutIs2D())) {
+                    button.setBackground(activeButtonColor);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                updateViewButtonColor(button);
+            }
+        });
     }
 
-    private void show3DView() {
-        this.cardLayout.show(this.rightPanel, "3D");
-        this.show3DButton.setBackground(this.activeButtonColor);
-        this.show2DButton.setBackground(this.buttonColor);
-        this.gl3DPanel.repaint();
+    private void updateViewButtonColor(JButton button) {
+        if (button == show2DButton && cardLayoutIs2D()) {
+            button.setBackground(activeButtonColor);
+        } else if (button == show3DButton && !cardLayoutIs2D()) {
+            button.setBackground(activeButtonColor);
+        } else {
+            button.setBackground(buttonColor);
+        }
     }
 
     private boolean cardLayoutIs2D() {
-        Component[] var1 = this.rightPanel.getComponents();
-        int var2 = var1.length;
-
-        for(int var3 = 0; var3 < var2; ++var3) {
-            Component comp = var1[var3];
-            if (comp.isVisible() && comp == this.gl2DPanel) {
-                return true;
-            }
-        }
-
-        return false;
+        return gl2DPanel.isVisible();
     }
 
-    private void widthFieldListener() {
-        this.roomConfigPanel.widthField.addActionListener((e) -> {
-            this.gl2DPanel.repaint();
-            this.gl3DPanel.repaint();
-        });
+    private void show2DView() {
+        syncRenderItems(); // Sync data before rendering
+        cardLayout.show(rightPanel, VIEW_2D);
+        gl2DPanel.repaint();
     }
 
-    private void heightFieldListener() {
-        this.roomConfigPanel.heightField.addActionListener((e) -> {
-            this.gl2DPanel.repaint();
-            this.gl3DPanel.repaint();
-        });
-    }
-
-    private void colorButtonListener() {
-        this.roomConfigPanel.wallColorBtn.addActionListener((e) -> {
-            this.gl2DPanel.repaint();
-            this.gl3DPanel.repaint();
-        });
-        this.roomConfigPanel.floorColorBtn.addActionListener((e) -> {
-            this.gl2DPanel.repaint();
-            this.gl3DPanel.repaint();
-        });
+    private void show3DView() {
+        syncRenderItems();
+        cardLayout.show(rightPanel, VIEW_3D);
+        show3DButton.setBackground(activeButtonColor);
+        show2DButton.setBackground(buttonColor);
+        gl3DPanel.requestFocusInWindow();
+        gl3DPanel.repaint();
     }
 
     private void addFurniture() {
-        String type = this.furnitureConfigPanel.getSelectedFurnitureType();
-        float scale = this.furnitureConfigPanel.getScale();
-        this.renderer2D.add(type, scale);
-        this.renderer3D.add(type, scale);
-        this.gl2DPanel.repaint();
-        this.gl3DPanel.repaint();
+        String type = furnitureConfigPanel.getSelectedFurnitureType();
+        float scale = furnitureConfigPanel.getScale();
+        renderer2D.add(type, scale);
+        renderer3D.add(type, scale);
+        syncRenderItems();
+        gl2DPanel.repaint();
+        gl3DPanel.repaint();
+    }
+
+    private void syncRenderItems() {
+        // Clear existing 2D items
+        renderer2D.clearItems();
+
+        // Copy all items from 3D to 2D
+        for (RenderItem item3D : renderer3D.getItems()) {
+            renderer2D.add(item3D.type, item3D.scale);
+            RenderItem item2D = renderer2D.getItems().get(renderer2D.getItems().size() - 1);
+
+            // Sync position, rotation, and dimensions
+            item2D.x = item3D.x;
+            item2D.z = -item3D.z; // Invert Z for 2D view
+            item2D.rotationY = item3D.rotationY;
+            item2D.width = item3D.width;
+            item2D.height = item3D.height;
+        }
+
+        // Sync selected item
+        RenderItem selected3D = renderer3D.getSelectedItem();
+        if (selected3D != null) {
+            // Find corresponding 2D item
+            for (RenderItem item2D : renderer2D.getItems()) {
+                if (item2D.type.equals(selected3D.type) &&
+                        item2D.x == selected3D.x &&
+                        item2D.z == -selected3D.z) {
+                    renderer2D.setSelectedItem(item2D);
+                    break;
+                }
+            }
+        } else {
+            renderer2D.setSelectedItem(null);
+        }
     }
 
     private void clearDesign() {
-        this.renderer2D.clearItems();
-        this.renderer3D.clearItems();
-        this.gl2DPanel.repaint();
-        this.gl3DPanel.repaint();
+        renderer2D.clearItems();
+        renderer3D.clearItems();
+        gl2DPanel.repaint();
+        gl3DPanel.repaint();
     }
 
     private void saveDesign() {
-        RoomDesign design = new RoomDesign(this.renderer3D.getItems(), this.roomConfigPanel.getRoomShape(), this.roomConfigPanel.getRoomWidth(), this.roomConfigPanel.getRoomDepth(), this.roomConfigPanel.getWallColor(), this.roomConfigPanel.getFloorColor());
-        String filename = "saved_design_" + String.valueOf(UUID.randomUUID()) + ".dat";
-
-        try {
-            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filename));
-
-            try {
-                out.writeObject(design);
-                JOptionPane.showMessageDialog(this, "Design saved as " + filename);
-            } catch (Throwable var7) {
-                try {
-                    out.close();
-                } catch (Throwable var6) {
-                    var7.addSuppressed(var6);
-                }
-
-                throw var7;
-            }
-
-            out.close();
-        } catch (Exception var8) {
-            Exception ex = var8;
-            JOptionPane.showMessageDialog(this, "Error saving design: " + ex.getMessage(), "Error", 0);
+        RoomDesign design = new RoomDesign(
+                renderer3D.getItems(),
+                roomConfigPanel.getRoomShape(),
+                roomConfigPanel.getRoomWidth(),
+                roomConfigPanel.getRoomDepth(),
+                roomConfigPanel.getWallColor(),
+                roomConfigPanel.getFloorColor()
+        );
+        String filename = "saved_design_" + UUID.randomUUID() + ".dat";
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filename))) {
+            out.writeObject(design);
+            JOptionPane.showMessageDialog(this, "Design saved as " + filename);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error saving design: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-
     }
 
     private void showHouseView() {
-        JFrame frame = new JFrame("House View");
-        frame.setDefaultCloseOperation(2);
-        frame.add(new HouseViewPanel());
-        frame.setSize(1200, 800);
-        frame.setLocationRelativeTo((Component)null);
-        frame.setVisible(true);
+        JDialog dialog = new JDialog();
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(1000, 700);
+        dialog.setLocationRelativeTo(null);
+        dialog.setModal(true);
+
+        HouseViewPanel houseViewPanel = new HouseViewPanel();
+        JButton saveBtn = createStyledButton("Save Design");
+        JButton editButton = new JButton("Edit Selected Design");
+        editButton.setEnabled(false);
+
+        houseViewPanel.addPropertyChangeListener("selectedDesign", e -> {
+            editButton.setEnabled(houseViewPanel.getSelectedDesign() != null);
+        });
+
+        editButton.addActionListener(e -> {
+            RoomDesign design = houseViewPanel.getSelectedDesign();
+            if (design != null) {
+                loadDesign(design);
+                dialog.dispose();
+            }
+        });
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(editButton);
+
+        dialog.add(houseViewPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        dialog.setVisible(true);
+    }
+
+    private void loadDesign(RoomDesign design) {
+        // Clear current design
+        clearDesign();
+
+        // Load room configuration
+        roomConfigPanel.setRoomShape(design.getShape());
+        roomConfigPanel.setRoomWidth(design.getWidth());
+        roomConfigPanel.setRoomDepth(design.getDepth());
+        roomConfigPanel.setWallColor(design.getWallColor());
+        roomConfigPanel.setFloorColor(design.getFloorColor());
+
+        // Load furniture items
+        for (RenderItem item : design.getItems()) {
+            renderer3D.add(item.getType(), item.getScale());
+            RenderItem addedItem = renderer3D.getItems().get(renderer3D.getItems().size()-1);
+            addedItem.setX(item.getX());
+            addedItem.setZ(item.getZ());
+            addedItem.setRotationY(item.getRotationY());
+        }
+
+        // Refresh views
+        syncRenderItems();
+        gl2DPanel.repaint();
+        gl3DPanel.repaint();
     }
 
     private void setupMouseListeners() {
-        MouseAdapter mouseAdapter = new MouseAdapter() {
+        MouseAdapter sharedMouseAdapter = new MouseAdapter() {
+            @Override
             public void mousePressed(MouseEvent e) {
-                ShowRoomPanel.this.lastX = e.getX();
-                ShowRoomPanel.this.lastY = e.getY();
-                if (e.getButton() == 1) {
-                    ShowRoomPanel.this.renderer3D.selectItemAt(ShowRoomPanel.this.lastX, ShowRoomPanel.this.lastY);
+                lastX = e.getX();
+                lastY = e.getY();
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    renderer3D.selectItemAt(lastX, lastY);
+                    renderer2D.setSelectedItem(renderer3D.getSelectedItem());
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    renderer3D.deselectItem();
+                    renderer2D.setSelectedItem(null);
                 }
-
+                gl2DPanel.repaint();
+                gl3DPanel.repaint();
             }
 
+            @Override
             public void mouseDragged(MouseEvent e) {
                 int x = e.getX();
                 int y = e.getY();
-                if (ShowRoomPanel.this.lastX != -1 && ShowRoomPanel.this.lastY != -1) {
-                    float dy;
+                if (lastX != -1 && lastY != -1) {
                     if (SwingUtilities.isLeftMouseButton(e)) {
-                        RenderItem selected = ShowRoomPanel.this.renderer3D.getSelectedItem();
+                        RenderItem selected = renderer3D.getSelectedItem();
                         if (selected != null) {
-                            dy = (float)(x - ShowRoomPanel.this.lastX) * 0.05F;
-                            float dz = (float)(y - ShowRoomPanel.this.lastY) * 0.05F;
-                            selected.x += dy;
-                            selected.z += dz;
+                            float dx = (x - lastX) * 0.05f;
+                            float dz = (y - lastY) * 0.05f;
+
+                            renderer2D.moveSelectedItem(dx, dz);   // Keep this direction
+                            selected.x += dx;
+                            selected.z += dz; //  Fix: do NOT invert dz
+
+                            // Clamp within room boundaries for 3D
+                            float halfW = roomConfigPanel.getRoomWidth() / 2f;
+                            float halfD = roomConfigPanel.getRoomDepth() / 2f;
+                            float hw = selected.width * selected.scale / 2f;
+                            float hh = selected.height * selected.scale / 2f;
+                            selected.x = Math.max(-halfW + hw, Math.min(halfW - hw, selected.x));
+                            selected.z = Math.max(-halfD + hh, Math.min(halfD - hh, selected.z));
+                            syncRenderItems();
                         }
                     } else if (SwingUtilities.isRightMouseButton(e)) {
-                        if (ShowRoomPanel.this.renderer3D.isResizingFloor) {
-                            float dx = (float)(x - ShowRoomPanel.this.lastX) * 0.05F;
-                            dy = (float)(y - ShowRoomPanel.this.lastY) * 0.05F;
-                            ShowRoomPanel.this.renderer3D.updateRoomDimensions(dx, dy);
+                        if (renderer3D.isResizingFloor) {
+                            float dx = (x - lastX) * 0.05f;
+                            float dy = (y - lastY) * 0.05f;
+                            renderer3D.updateRoomDimensions(dx, dy);
                         } else {
-                            ShowRoomPanel var10000 = ShowRoomPanel.this;
-                            var10000.rotationY += (float)(x - ShowRoomPanel.this.lastX) * 0.5F;
-                            var10000 = ShowRoomPanel.this;
-                            var10000.rotationX += (float)(y - ShowRoomPanel.this.lastY) * 0.5F;
-                            ShowRoomPanel.this.rotationX = Math.max(-5.0F, Math.min(80.0F, ShowRoomPanel.this.rotationX));
-                            ShowRoomPanel.this.renderer2D.setRotationAngleY(ShowRoomPanel.this.rotationY);
-                            ShowRoomPanel.this.renderer3D.setRotationAngles(ShowRoomPanel.this.rotationX, ShowRoomPanel.this.rotationY);
+                            rotationY += (x - lastX) * rotationSpeed;
+                            rotationX += (y - lastY) * rotationSpeed;
+                            rotationX = Math.max(-5f, Math.min(80f, rotationX));
+                            renderer2D.setRotationAngleY(rotationY);
+                            renderer3D.setRotationAngles(rotationX, rotationY);
                         }
                     }
                 }
+                lastX = x;
+                lastY = y;
+                gl2DPanel.repaint();
+                gl3DPanel.repaint();
+            }
 
-                ShowRoomPanel.this.lastX = x;
-                ShowRoomPanel.this.lastY = y;
-                ShowRoomPanel.this.gl2DPanel.repaint();
-                ShowRoomPanel.this.gl3DPanel.repaint();
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                lastX = -1;
+                lastY = -1;
+                gl2DPanel.repaint();
+                gl3DPanel.repaint();
             }
         };
-        MouseWheelListener wheelListener = (e) -> {
-            int notches = e.getWheelRotation();
-            if (notches < 0) {
-                this.renderer3D.zoomIn();
+
+        gl2DPanel.addMouseListener(sharedMouseAdapter);
+        gl2DPanel.addMouseMotionListener(sharedMouseAdapter);
+        gl2DPanel.addMouseWheelListener(e -> {
+            if (e.getWheelRotation() < 0) {
+                renderer2D.zoomIn();
             } else {
-                this.renderer3D.zoomOut();
+                renderer2D.zoomOut();
             }
+            gl2DPanel.repaint();
+        });
 
-            this.gl3DPanel.repaint();
-        };
-        this.gl3DPanel.addMouseListener(mouseAdapter);
-        this.gl3DPanel.addMouseMotionListener(mouseAdapter);
-        this.gl3DPanel.addMouseWheelListener(wheelListener);
+        gl3DPanel.addMouseListener(sharedMouseAdapter);
+        gl3DPanel.addMouseMotionListener(sharedMouseAdapter);
+        gl3DPanel.addMouseWheelListener(e -> {
+            if (e.getWheelRotation() < 0) {
+                renderer3D.zoomIn();
+            } else {
+                renderer3D.zoomOut();
+            }
+            gl3DPanel.repaint();
+        });
     }
 
     private void setupKeyListeners() {
-        this.gl3DPanel.setFocusable(true);
-        this.gl3DPanel.requestFocusInWindow();
-        this.gl3DPanel.addKeyListener(new KeyAdapter() {
+        gl3DPanel.setFocusable(true);
+        gl3DPanel.addKeyListener(new KeyAdapter() {
+            @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == 32) {
-                    ShowRoomPanel.this.renderer3D.isResizingFloor = !ShowRoomPanel.this.renderer3D.isResizingFloor;
+                if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                    renderer3D.isResizingFloor = !renderer3D.isResizingFloor;
+                    gl3DPanel.repaint();
                 }
-
             }
+        });
+
+        gl2DPanel.setFocusable(true);
+        gl2DPanel.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                    renderer3D.isResizingFloor = !renderer3D.isResizingFloor;
+                    gl3DPanel.repaint();
+                    gl2DPanel.repaint();
+                }
+            }
+        });
+    }
+
+    private void setupRoomConfigListeners() {
+        roomConfigPanel.addShapeChangeListener(() -> {
+            renderer2D.clearItems();
+            renderer3D.clearItems();
+            syncRenderItems();
+            gl2DPanel.repaint();
+            gl3DPanel.repaint();
+        });
+    }
+
+    private void setupFieldListeners() {
+        roomConfigPanel.widthField.addActionListener(e -> {
+            syncRenderItems();
+            gl2DPanel.repaint();
+            gl3DPanel.repaint();
+        });
+        roomConfigPanel.lengthField.addActionListener(e -> {
+            syncRenderItems();
+            gl2DPanel.repaint();
+            gl3DPanel.repaint();
+        });
+    }
+
+    private void setupColorListeners() {
+        roomConfigPanel.wallColorBtn.addActionListener(e -> {
+            renderer2D.setRotationAngleY(rotationY);
+            gl2DPanel.repaint();
+            gl3DPanel.repaint();
+        });
+        roomConfigPanel.floorColorBtn.addActionListener(e -> {
+            gl2DPanel.repaint();
+            gl3DPanel.repaint();
         });
     }
 }
