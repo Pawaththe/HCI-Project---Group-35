@@ -8,7 +8,7 @@ import java.util.Map;
 public class Login extends JFrame {
     private LoginSuccessListener listener;
 
-    public Login(LoginSuccessListener listener) {
+    public Login() {
         super("Furniture Management System");
         this.listener = listener;
 

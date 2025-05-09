@@ -1,11 +1,14 @@
 package furniture.management.system.model;
 
+import com.jogamp.opengl.*;
+
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLJPanel;
 import com.jogamp.opengl.util.FPSAnimator;
+import com.jogamp.opengl.GLEventListener;
 import furniture.management.system.view.ControlsPanel;
 import furniture.management.system.view.RoundedButton;
 import furniture.management.system.view.SavePanel;
