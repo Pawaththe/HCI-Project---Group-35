@@ -1,20 +1,17 @@
 package furniture.management.system.model;
 
 public class RotationManager {
-    private float rotationAngleY = 0.0F;
-
-    public RotationManager() {
-    }
+    private float rotationAngleY = 0.0f;
 
     public float getRotationAngleY() {
-        return this.rotationAngleY;
+        return rotationAngleY;
     }
 
     public void rotateLeft() {
-        this.rotationAngleY -= 10.0F;
+        rotationAngleY -= 10.0f;
     }
 
     public void rotateRight() {
-        this.rotationAngleY += 10.0F;
+        rotationAngleY += 10.0f;
     }
 }
