@@ -157,7 +157,7 @@ public class Renderer3D implements GLEventListener {
             File imgFile = new File("background.jpg");
             backgroundTexture = TextureIO.newTexture(imgFile, true);
         } catch (IOException e) {
-            System.err.println("Error loading background texture: " + e.getMessage());
+
             gl.glClearColor(1f, 1f, 1f, 1f);
         }
 
@@ -165,7 +165,7 @@ public class Renderer3D implements GLEventListener {
             File wallImgFile = new File("wall_texture.jpg");
             wallTexture = TextureIO.newTexture(wallImgFile, true);
         } catch (IOException e) {
-            System.err.println("Error loading wall texture: " + e.getMessage());
+
         }
     }
 
